@@ -3,9 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>1D Tight-Binding Band Visualizer</title>
+  <title>1D Tight-Binding (Masters) — Bands, v(k), m*(k), DOS</title>
 
-  <!-- Plotly (CDN) -->
   <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
 
   <style>
@@ -14,26 +13,25 @@
       --card:#121a28;
       --text:#e8eefc;
       --muted:#a9b4cf;
-      --accent:#7aa2ff;
       --border:rgba(255,255,255,.10);
+      --accent:rgba(122,162,255,.75);
     }
     body{
       margin:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
       background:linear-gradient(180deg,#0b0f17 0%, #070a10 100%);
       color:var(--text);
     }
     .wrap{
-      max-width:1100px;
+      max-width:1200px;
       margin:0 auto;
       padding:18px;
       display:grid;
-      grid-template-columns: 360px 1fr;
+      grid-template-columns: 380px 1fr;
       gap:16px;
     }
-    @media (max-width: 980px){
-      .wrap{ grid-template-columns: 1fr; }
-    }
+    @media (max-width: 980px){ .wrap{ grid-template-columns: 1fr; } }
+
     .card{
       background:rgba(18,26,40,.92);
       border:1px solid var(--border);
@@ -41,20 +39,11 @@
       padding:14px;
       box-shadow: 0 14px 40px rgba(0,0,0,.25);
     }
-    h1{
-      font-size:18px;
-      margin:0 0 10px 0;
-      letter-spacing:.2px;
-      font-weight:650;
-    }
-    .sub{
-      color:var(--muted);
-      font-size:13px;
-      line-height:1.35;
-      margin:0 0 12px 0;
-    }
+    h1{ font-size:18px; margin:0 0 10px 0; font-weight:650; }
+    .sub{ color:var(--muted); font-size:13px; line-height:1.35; margin:0 0 12px 0; }
+
     .control{
-      margin:12px 0;
+      margin:10px 0;
       padding:10px;
       border:1px solid var(--border);
       border-radius:12px;
@@ -65,31 +54,49 @@
       justify-content:space-between;
       gap:12px;
       font-size:13px;
-      color:var(--text);
       margin-bottom:8px;
     }
     .control label span{
       color:var(--muted);
       font-variant-numeric: tabular-nums;
+      white-space:nowrap;
     }
-    input[type="range"]{
+    input[type="range"]{ width:100%; }
+    select{
       width:100%;
-    }
-    .row{
-      display:flex;
-      gap:10px;
-      align-items:center;
-      flex-wrap:wrap;
-      margin-top:10px;
-    }
-    .row label{
+      border-radius:12px;
+      padding:10px 10px;
+      border:1px solid var(--border);
+      background:rgba(255,255,255,.03);
+      color:var(--text);
       font-size:13px;
-      color:var(--muted);
+      outline:none;
+    }
+    .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:8px; }
+    .row label{ font-size:13px; color:var(--muted); display:flex; align-items:center; gap:8px; user-select:none; }
+
+    .tabs{
       display:flex;
-      align-items:center;
       gap:8px;
+      margin:10px 0 0 0;
+      flex-wrap:wrap;
+    }
+    .tab{
+      border:1px solid var(--border);
+      background:rgba(255,255,255,.03);
+      color:var(--muted);
+      padding:8px 10px;
+      border-radius:999px;
+      font-size:13px;
+      cursor:pointer;
       user-select:none;
     }
+    .tab.active{
+      color:var(--text);
+      border-color: var(--accent);
+      background:rgba(122,162,255,.10);
+    }
+
     .pill{
       display:inline-flex;
       gap:8px;
@@ -103,140 +110,218 @@
       font-variant-numeric: tabular-nums;
     }
     .pill b{ color: var(--text); font-weight:650; }
-    .footer{
+
+    .plotcard{ padding:10px; }
+    #plotBand, #plotVel, #plotMass, #plotDOS{
+      width:100%;
+      height:560px;
+      display:none;
+    }
+    @media (max-width: 980px){
+      #plotBand, #plotVel, #plotMass, #plotDOS{ height:520px; }
+    }
+    .twoplots{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:10px;
+    }
+    .half{
+      height:270px;
+    }
+    @media (max-width: 980px){
+      .half{ height:260px; }
+    }
+    code{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      color:#d7e3ff;
+    }
+    .hint{
       margin-top:10px;
       font-size:12px;
       color:var(--muted);
       line-height:1.35;
     }
-    .btnrow{
-      display:flex;
-      gap:10px;
-      margin-top:10px;
-      flex-wrap:wrap;
-    }
-    button{
-      appearance:none;
-      border:1px solid var(--border);
-      background:rgba(255,255,255,.04);
-      color:var(--text);
-      padding:9px 11px;
-      border-radius:12px;
-      font-size:13px;
-      cursor:pointer;
-    }
-    button:hover{ border-color: rgba(122,162,255,.55); }
-    .plotcard{ padding:10px; }
-    #plot{ width:100%; height:560px; }
-    @media (max-width: 980px){
-      #plot{ height:520px; }
-    }
-    .radio{
-      display:flex;
-      gap:10px;
-      align-items:center;
-      flex-wrap:wrap;
-      margin-top:8px;
-    }
-    .radio label{
-      font-size:13px;
-      color:var(--muted);
-      display:flex;
-      gap:8px;
-      align-items:center;
-    }
-    code{
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      color: #d7e3ff;
-    }
+    .hidden{ display:none !important; }
   </style>
 </head>
 
 <body>
   <div class="wrap">
     <div class="card">
-      <h1>1D Tight-Binding Band Visualizer</h1>
+      <h1>1D Tight-Binding (Masters)</h1>
       <p class="sub">
-        Model: <code>E(k)=E₀+2t cos(ka)+2t₂ cos(2ka)</code> over the 1st Brillouin zone.
-        Tune parameters to see how the band, BZ width, bandwidth, and effective mass change.
+        Bands + <code>v(k)</code> + <code>m*(k)</code> + DOS.
+        No band filling. Use the model selector to switch between monoatomic (1 band) and diatomic (2 bands with a gap).
       </p>
 
       <div class="control">
-        <label for="E0"><div>Onsite energy <b>E₀</b> (eV)</div><span id="E0v"></span></label>
-        <input id="E0" type="range" min="-5" max="5" step="0.01" value="0">
+        <label>Model</label>
+        <select id="model">
+          <option value="mono">Monoatomic (1 band): NN (+ optional NNN)</option>
+          <option value="diatomic">Diatomic (2 bands): onsite contrast Δ and (optional) dimerization</option>
+        </select>
       </div>
 
-      <div class="control">
-        <label for="t1"><div>Nearest-neighbor hopping <b>t</b> (eV)</div><span id="t1v"></span></label>
-        <input id="t1" type="range" min="-5" max="5" step="0.01" value="-1.00">
-      </div>
-
-      <div class="control">
-        <label for="t2"><div>Next-nearest hopping <b>t₂</b> (eV) <span style="color:var(--muted)">(optional)</span></div><span id="t2v"></span></label>
-        <input id="t2" type="range" min="-2" max="2" step="0.01" value="0.00">
-      </div>
-
+      <!-- Shared parameters -->
       <div class="control">
         <label for="a"><div>Lattice constant <b>a</b> (Å)</div><span id="av"></span></label>
-        <input id="a" type="range" min="1" max="10" step="0.01" value="4.00">
-      </div>
-
-      <div class="control">
-        <label for="Nk"><div>Finite chain k-points <b>N</b> (periodic)</div><span id="Nkv"></span></label>
-        <input id="Nk" type="range" min="2" max="200" step="1" value="20">
-        <div class="row">
-          <label><input id="showDiscrete" type="checkbox" checked> show discrete k-points</label>
+        <input id="a" type="range" min="1" max="12" step="0.01" value="4.00">
+        <div class="hint">
+          <code>a</code> rescales the Brillouin-zone width in Å⁻¹. In the diatomic model, the unit cell length is <code>a</code>.
         </div>
       </div>
 
+      <!-- Monoatomic controls -->
+      <div id="monoPanel">
+        <div class="control">
+          <label for="E0m"><div>Onsite energy <b>E₀</b> (eV)</div><span id="E0mv"></span></label>
+          <input id="E0m" type="range" min="-5" max="5" step="0.01" value="0.00">
+        </div>
+
+        <div class="control">
+          <label for="t1m"><div>Nearest-neighbor hopping <b>t</b> (eV)</div><span id="t1mv"></span></label>
+          <input id="t1m" type="range" min="-5" max="5" step="0.01" value="-1.00">
+        </div>
+
+        <div class="control">
+          <label for="t2m"><div>Next-nearest hopping <b>t₂</b> (eV)</div><span id="t2mv"></span></label>
+          <input id="t2m" type="range" min="-2" max="2" step="0.01" value="0.00">
+        </div>
+
+        <div class="control">
+          <label for="Nk"><div>Discrete k-points <b>N</b> (periodic chain)</div><span id="Nkv"></span></label>
+          <input id="Nk" type="range" min="2" max="200" step="1" value="30">
+          <div class="row">
+            <label><input id="showDiscrete" type="checkbox" checked> show discrete k-points</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Diatomic controls -->
+      <div id="diatomicPanel" class="hidden">
+        <div class="control">
+          <label for="E0d"><div>Average onsite <b>Ē</b> (eV)</div><span id="E0dv"></span></label>
+          <input id="E0d" type="range" min="-5" max="5" step="0.01" value="0.00">
+          <div class="hint">
+            In the diatomic basis: <code>E_A = Ē + Δ/2</code>, <code>E_B = Ē − Δ/2</code>.
+          </div>
+        </div>
+
+        <div class="control">
+          <label for="Delta"><div>Onsite contrast <b>Δ</b> (eV)</div><span id="Deltav"></span></label>
+          <input id="Delta" type="range" min="0" max="6" step="0.01" value="1.20">
+          <div class="hint">
+            Δ opens a gap even when hoppings are equal (ionic/heteronuclear chain intuition).
+          </div>
+        </div>
+
+        <div class="control">
+          <label for="t1d"><div>Intra-cell hopping <b>t₁</b> (eV)</div><span id="t1dv"></span></label>
+          <input id="t1d" type="range" min="-5" max="5" step="0.01" value="-1.00">
+        </div>
+
+        <div class="control">
+          <label for="t2d"><div>Inter-cell hopping <b>t₂</b> (eV)</div><span id="t2dv"></span></label>
+          <input id="t2d" type="range" min="-5" max="5" step="0.01" value="-1.00">
+          <div class="row">
+            <label><input id="lockDimer" type="checkbox" checked> lock to <code>t₂ = t₁</code> (no dimerization)</label>
+          </div>
+          <div class="hint">
+            Unlock to explore SSH dimerization: the gap can open at the zone boundary even with Δ=0 when <code>t₁ ≠ t₂</code>.
+          </div>
+        </div>
+      </div>
+
+      <!-- DOS controls -->
       <div class="control">
-        <div style="font-size:13px; color:var(--text); margin-bottom:6px;">k-axis</div>
-        <div class="radio">
+        <label for="dosSigma"><div>DOS broadening <b>σ</b> (meV)</div><span id="dosSigmav"></span></label>
+        <input id="dosSigma" type="range" min="1" max="250" step="1" value="35">
+        <div class="hint">
+          Numerical DOS uses Gaussian broadening. Smaller σ sharpens 1D van Hove features but needs denser sampling.
+        </div>
+      </div>
+
+      <!-- Axis control -->
+      <div class="control">
+        <div style="font-size:13px; margin-bottom:6px;">k-axis</div>
+        <div class="row">
           <label><input type="radio" name="kaxis" value="invA" checked> <span>k in Å⁻¹</span></label>
           <label><input type="radio" name="kaxis" value="ka"> <span>reduced coordinate <code>ka</code></span></label>
         </div>
       </div>
 
-      <div class="btnrow">
-        <button id="preset1">Preset: typical (t = −1 eV, a = 4 Å)</button>
-        <button id="preset2">Preset: weak coupling (t = −0.2 eV)</button>
+      <div class="tabs">
+        <div class="tab active" data-tab="band">Band(s)</div>
+        <div class="tab" data-tab="derived">Derived</div>
+        <div class="tab" data-tab="dos">DOS</div>
       </div>
 
       <div class="row" style="margin-top:12px;">
         <div class="pill"><b>Bandwidth</b> <span id="bw"></span></div>
         <div class="pill"><b>BZ edge</b> <span id="bzed"></span></div>
-        <div class="pill"><b>m*/me</b> <span id="mstar"></span></div>
+        <div class="pill"><b>Gap</b> <span id="gap"></span></div>
       </div>
 
-      <div class="footer">
-        Notes: In tight binding, the sign of <code>t</code> sets whether the minimum is at <code>k=0</code> (often <code>t&lt;0</code>) or at the zone edge.
-        Changing <code>a</code> rescales the Brillouin zone width in Å⁻¹.
+      <div class="hint">
+        Conventions: energies in eV, <code>a</code> in Å, DOS in arbitrary units (normalized to the number of bands).
       </div>
     </div>
 
     <div class="card plotcard">
-      <div id="plot"></div>
+      <div id="plotBand"></div>
+
+      <div id="derivedWrap" class="twoplots" style="display:none;">
+        <div id="plotVel" class="half"></div>
+        <div id="plotMass" class="half"></div>
+      </div>
+
+      <div id="plotDOS"></div>
     </div>
   </div>
 
 <script>
 (function(){
-  // Physical constants (SI) for effective mass estimate
+  // Constants for derived quantities (SI)
   const eV_to_J = 1.602176634e-19;
-  const hbar = 1.054571817e-34; // J*s
-  const m_e = 9.1093837015e-31; // kg
+  const hbar = 1.054571817e-34;     // J*s
+  const m_e = 9.1093837015e-31;     // kg
   const Ang_to_m = 1e-10;
 
-  // UI handles
   const el = (id) => document.getElementById(id);
-  const E0 = el("E0"), t1 = el("t1"), t2 = el("t2"), a = el("a"), Nk = el("Nk");
-  const E0v = el("E0v"), t1v = el("t1v"), t2v = el("t2v"), av = el("av"), Nkv = el("Nkv");
+
+  // UI elements
+  const model = el("model");
+  const a = el("a");
+  const av = el("av");
+
+  // Monoatomic
+  const monoPanel = el("monoPanel");
+  const E0m = el("E0m"), t1m = el("t1m"), t2m = el("t2m");
+  const E0mv = el("E0mv"), t1mv = el("t1mv"), t2mv = el("t2mv");
+  const Nk = el("Nk"), Nkv = el("Nkv");
   const showDiscrete = el("showDiscrete");
-  const bw = el("bw"), bzed = el("bzed"), mstar = el("mstar");
-  const preset1 = el("preset1"), preset2 = el("preset2");
+
+  // Diatomic
+  const diatomicPanel = el("diatomicPanel");
+  const E0d = el("E0d"), Delta = el("Delta"), t1d = el("t1d"), t2d = el("t2d");
+  const E0dv = el("E0dv"), Deltav = el("Deltav"), t1dv = el("t1dv"), t2dv = el("t2dv");
+  const lockDimer = el("lockDimer");
+
+  // DOS
+  const dosSigma = el("dosSigma"), dosSigmav = el("dosSigmav");
+
+  // Tabs / plots
+  const tabEls = document.querySelectorAll(".tab");
+  const plotBand = el("plotBand");
+  const plotDOS = el("plotDOS");
+  const plotVel = el("plotVel");
+  const plotMass = el("plotMass");
+  const derivedWrap = el("derivedWrap");
+
+  // Summary pills
+  const bw = el("bw"), bzed = el("bzed"), gapEl = el("gap");
 
   function fmt(x, digits=2){ return Number(x).toFixed(digits); }
-
   function getAxisMode(){
     const radios = document.querySelectorAll('input[name="kaxis"]');
     for (const r of radios) if (r.checked) return r.value;
@@ -250,118 +335,276 @@
     return arr;
   }
 
-  function energy(k, E0eV, t1eV, t2eV, aAng){
-    // k is in Å^-1
-    const ka = k * aAng; // dimensionless
-    return E0eV + 2*t1eV*Math.cos(ka) + 2*t2eV*Math.cos(2*ka);
-  }
+  function updateVisibility(){
+    const isMono = (model.value === "mono");
+    monoPanel.classList.toggle("hidden", !isMono);
+    diatomicPanel.classList.toggle("hidden", isMono);
 
-  function d2E_dk2_at_k(k, t1eV, t2eV, aAng){
-    // second derivative w.r.t k (in 1/m) requires using a in meters if k in 1/m.
-    // We compute curvature using k in 1/m internally.
-    // For E = 2 t cos(k a): d2E/dk2 = -2 t a^2 cos(k a)
-    // For E = 2 t2 cos(2 k a): d2E/dk2 = -8 t2 a^2 cos(2 k a)
-    const a_m = aAng * Ang_to_m;
-    const ka = k * a_m; // dimensionless (k in 1/m)
-    // Curvature in eV * m^2 (since a_m^2)
-    const curv_eV_m2 =
-      (-2 * t1eV * a_m*a_m * Math.cos(ka)) +
-      (-8 * t2eV * a_m*a_m * Math.cos(2*ka));
-    return curv_eV_m2 * eV_to_J; // J * m^2
-  }
-
-  function estimateEffectiveMass(E0eV, t1eV, t2eV, aAng){
-    // Find band minimum by sampling within BZ, then compute curvature there.
-    // Use k in 1/m for curvature calculation.
-    const a_m = aAng * Ang_to_m;
-    const kmax = Math.PI / a_m;
-    const n = 2001;
-    let kmin = -kmax, Emin = Infinity;
-
-    for (let i=0; i<n; i++){
-      const k = -kmax + (2*kmax)*(i/(n-1)); // 1/m
-      const ka = k * a_m;
-      const E = E0eV + 2*t1eV*Math.cos(ka) + 2*t2eV*Math.cos(2*ka);
-      if (E < Emin){
-        Emin = E; kmin = k;
-      }
+    // lock dimerization UI
+    if (lockDimer.checked){
+      t2d.disabled = true;
+      t2d.style.opacity = "0.55";
+    } else {
+      t2d.disabled = false;
+      t2d.style.opacity = "1";
     }
-
-    const curv = d2E_dk2_at_k(kmin, t1eV, t2eV, aAng); // J*m^2
-    if (!isFinite(curv) || Math.abs(curv) < 1e-60) return NaN;
-
-    // m* = ħ^2 / (d^2E/dk^2)
-    const mstar_kg = (hbar*hbar) / curv;
-    return mstar_kg / m_e;
   }
 
   function updateLabels(){
-    E0v.textContent = `${fmt(E0.value,2)} eV`;
-    t1v.textContent = `${fmt(t1.value,2)} eV`;
-    t2v.textContent = `${fmt(t2.value,2)} eV`;
-    av.textContent  = `${fmt(a.value,2)} Å`;
+    av.textContent = `${fmt(a.value,2)} Å`;
+
+    E0mv.textContent = `${fmt(E0m.value,2)} eV`;
+    t1mv.textContent = `${fmt(t1m.value,2)} eV`;
+    t2mv.textContent = `${fmt(t2m.value,2)} eV`;
+
     Nkv.textContent = `${Nk.value}`;
+
+    E0dv.textContent = `${fmt(E0d.value,2)} eV`;
+    Deltav.textContent = `${fmt(Delta.value,2)} eV`;
+    t1dv.textContent = `${fmt(t1d.value,2)} eV`;
+    t2dv.textContent = `${fmt(t2d.value,2)} eV`;
+
+    dosSigmav.textContent = `${dosSigma.value} meV`;
   }
 
-  function rebuildPlot(){
+  // --- Dispersion models on q = k a in [-pi, pi] ---
+  function monoBands(qArr, E0, t1, t2){
+    // Returns array of bands: [ [E(q)], ... ] ; monoatomic => 1 band
+    const E = qArr.map(q => E0 + 2*t1*Math.cos(q) + 2*t2*Math.cos(2*q));
+    return [E];
+  }
+
+  function diatomicBands(qArr, Ebar, Delta, t1, t2){
+    // SSH-like 2x2 Bloch Hamiltonian with onsite contrast:
+    // H(q) = [[E_A, t1 + t2 e^{-iq}], [t1 + t2 e^{iq}, E_B]]
+    // E± = Ebar ± sqrt( (Delta/2)^2 + |t1 + t2 e^{iq}|^2 )
+    const halfD = Delta/2;
+    const Ep = new Array(qArr.length);
+    const Em = new Array(qArr.length);
+
+    for (let i=0; i<qArr.length; i++){
+      const q = qArr[i];
+      const abs2 = (t1*t1 + t2*t2 + 2*t1*t2*Math.cos(q)); // |t1 + t2 e^{iq}|^2
+      const rad = Math.sqrt(halfD*halfD + abs2);
+      Ep[i] = Ebar + rad;
+      Em[i] = Ebar - rad;
+    }
+    return [Em, Ep]; // lower, upper
+  }
+
+  // --- Derivatives and SI conversion ---
+  function centralDiff(y, x){
+    // dy/dx for arrays using central differences; endpoints use one-sided
+    const n = y.length;
+    const dydx = new Array(n);
+    for (let i=1; i<n-1; i++){
+      dydx[i] = (y[i+1] - y[i-1]) / (x[i+1] - x[i-1]);
+    }
+    dydx[0] = (y[1] - y[0]) / (x[1] - x[0]);
+    dydx[n-1] = (y[n-1] - y[n-2]) / (x[n-1] - x[n-2]);
+    return dydx;
+  }
+
+  function secondCentralDiff(y, x){
+    // d2y/dx2 using finite differences
+    const n = y.length;
+    const d2 = new Array(n);
+    for (let i=1; i<n-1; i++){
+      const dx1 = x[i] - x[i-1];
+      const dx2 = x[i+1] - x[i];
+      // nonuniform grid generalized formula (but x is uniform here); keep robust:
+      const a = 2/(dx1*(dx1+dx2));
+      const b = -2/(dx1*dx2);
+      const c = 2/(dx2*(dx1+dx2));
+      d2[i] = a*y[i-1] + b*y[i] + c*y[i+1];
+    }
+    d2[0] = d2[1];
+    d2[n-1] = d2[n-2];
+    return d2;
+  }
+
+  function computeVelocityAndMass(qArr, bands, aAng){
+    // q = k a ; k_SI = q / a_m
+    // dE/dk_SI = dE/dq * a_m
+    // v = (1/hbar) dE/dk_SI
+    // d2E/dk2_SI = d2E/dq2 * a_m^2
+    // m* = hbar^2 / (d2E/dk2_SI)  (E in J)
+    const a_m = aAng * Ang_to_m;
+
+    const out = [];
+    for (const E of bands){
+      const dEdq_eV = centralDiff(E, qArr);
+      const d2Edq2_eV = secondCentralDiff(E, qArr);
+
+      const v = dEdq_eV.map(val => (eV_to_J * val * a_m) / hbar); // m/s
+
+      const mstar = d2Edq2_eV.map(val => {
+        const curv_J_m2 = (val * eV_to_J) * (a_m*a_m);
+        if (!isFinite(curv_J_m2) || Math.abs(curv_J_m2) < 1e-60) return NaN;
+        return (hbar*hbar / curv_J_m2) / m_e; // in units of m_e
+      });
+
+      out.push({ v, mstar });
+    }
+    return out;
+  }
+
+  // --- DOS (Gaussian-broadened histogram / kernel sum) ---
+  function gaussian(x, mu, sigma){
+    const z = (x - mu)/sigma;
+    return Math.exp(-0.5*z*z) / (sigma*Math.sqrt(2*Math.PI));
+  }
+
+  function computeDOS(bands, Emin, Emax, sigma_eV){
+    // Build E grid and sum Gaussian kernels over all states; normalize area to (# bands)
+    const nE = 900;
+    const Egrid = linspace(Emin, Emax, nE);
+    const dos = new Array(nE).fill(0);
+
+    let nStates = 0;
+    for (const band of bands) nStates += band.length;
+
+    for (const band of bands){
+      for (let i=0; i<band.length; i++){
+        const Ei = band[i];
+        // Add gaussian to DOS grid (O(N^2) would be heavy; but 2 bands * ~2500 points * 900 is OK in browser)
+        for (let j=0; j<nE; j++){
+          dos[j] += gaussian(Egrid[j], Ei, sigma_eV);
+        }
+      }
+    }
+
+    // Normalize so integral over E equals number of bands (per k-grid).
+    // Approx integral ~ sum(dos)*dE. Current sum includes all states; scale accordingly.
+    const dE = (Emax - Emin)/(nE - 1);
+    const integral = dos.reduce((acc, v) => acc + v, 0) * dE;
+    const nBands = bands.length;
+    const scale = (integral > 0) ? (nBands / integral) : 1;
+    for (let j=0; j<nE; j++) dos[j] *= scale;
+
+    return { Egrid, dos };
+  }
+
+  function bandStats(bands){
+    let Emin = Infinity, Emax = -Infinity;
+    for (const band of bands){
+      for (const E of band){
+        if (E < Emin) Emin = E;
+        if (E > Emax) Emax = E;
+      }
+    }
+    return { Emin, Emax, BW: Emax - Emin };
+  }
+
+  function bandGap(bands){
+    // For 2-band case: gap = min(Eupper) - max(Elower)
+    if (bands.length < 2) return 0;
+    const lower = bands[0], upper = bands[1];
+    let maxLower = -Infinity, minUpper = Infinity;
+    for (const E of lower) if (E > maxLower) maxLower = E;
+    for (const E of upper) if (E < minUpper) minUpper = E;
+    return Math.max(0, minUpper - maxLower);
+  }
+
+  function setActiveTab(which){
+    tabEls.forEach(t => t.classList.toggle("active", t.dataset.tab === which));
+
+    plotBand.style.display = (which === "band") ? "block" : "none";
+    plotDOS.style.display  = (which === "dos")  ? "block" : "none";
+    derivedWrap.style.display = (which === "derived") ? "grid" : "none";
+  }
+
+  function layoutCommon(){
+    return {
+      paper_bgcolor: "rgba(0,0,0,0)",
+      plot_bgcolor: "rgba(0,0,0,0)",
+      margin: {l: 62, r: 20, t: 16, b: 56},
+      legend: { bgcolor:"rgba(0,0,0,0)", font:{color:"rgba(232,238,252,0.9)"} }
+    };
+  }
+
+  function axisStyle(title){
+    return {
+      title,
+      zeroline:false,
+      gridcolor:"rgba(255,255,255,0.08)",
+      tickfont:{color:"rgba(232,238,252,0.9)"},
+      titlefont:{color:"rgba(232,238,252,0.95)"}
+    };
+  }
+
+  function rebuildAll(){
+    updateVisibility();
     updateLabels();
 
-    const E0eV = parseFloat(E0.value);
-    const t1eV = parseFloat(t1.value);
-    const t2eV = parseFloat(t2.value);
     const aAng = parseFloat(a.value);
-
-    // Continuous curve in Å^-1 for display
-    const kEdge_invA = Math.PI / aAng;          // (π/a) in Å^-1
-    const k_arr = linspace(-kEdge_invA, kEdge_invA, 1201);
-    const E_arr = k_arr.map(k => energy(k, E0eV, t1eV, t2eV, aAng));
-
-    // Summary stats
-    let Emin = Infinity, Emax = -Infinity;
-    for (const E of E_arr){ if (E < Emin) Emin = E; if (E > Emax) Emax = E; }
-    const BW = Emax - Emin;
-
-    bw.textContent = `${fmt(BW,3)} eV`;
-    bzed.textContent = (getAxisMode()==="invA")
-      ? `±${fmt(kEdge_invA,3)} Å⁻¹`
-      : `±π`;
-
-    const mrel = estimateEffectiveMass(E0eV, t1eV, t2eV, aAng);
-    mstar.textContent = isFinite(mrel) ? `${fmt(mrel,3)}` : "—";
-
-    // x-axis mapping
     const axisMode = getAxisMode();
-    const x_arr = (axisMode === "ka") ? k_arr.map(k => k * aAng) : k_arr;
 
-    // Optional discrete k-points for periodic chain
-    const N = parseInt(Nk.value, 10);
-    const showDisc = showDiscrete.checked;
-    let kd = [], Ed = [];
-    if (showDisc){
-      // k_n = (2π/(Na)) n mapped to [-π/a, π/a)
-      // Build symmetric set around 0 for clarity.
+    // Dense sampling in reduced coordinate q = k a in [-pi, pi]
+    const qArr = linspace(-Math.PI, Math.PI, 2401);
+
+    let bands;
+    let modelName;
+    if (model.value === "mono"){
+      modelName = "Monoatomic";
+      const E0 = parseFloat(E0m.value);
+      const t1 = parseFloat(t1m.value);
+      const t2 = parseFloat(t2m.value);
+      bands = monoBands(qArr, E0, t1, t2);
+    } else {
+      modelName = "Diatomic";
+      const Ebar = parseFloat(E0d.value);
+      const D = parseFloat(Delta.value);
+      const t1 = parseFloat(t1d.value);
+      const t2 = lockDimer.checked ? t1 : parseFloat(t2d.value);
+      // ensure UI label shows actual t2 used
+      if (lockDimer.checked) t2d.value = t1d.value;
+      bands = diatomicBands(qArr, Ebar, D, t1, t2);
+    }
+
+    // k in Å^-1 is k = q / aAng
+    const kArr_invA = qArr.map(q => q / aAng);
+    const xBand = (axisMode === "ka") ? qArr : kArr_invA;
+    const xlabel = (axisMode === "ka") ? "Reduced wavevector, ka" : "Wavevector, k (Å⁻¹)";
+
+    // Summary pills
+    const stats = bandStats(bands);
+    const gap = bandGap(bands);
+    bw.textContent = `${fmt(stats.BW,3)} eV`;
+    gapEl.textContent = (bands.length >= 2) ? `${fmt(gap,3)} eV` : "—";
+    const kEdge_invA = Math.PI / aAng;
+    bzed.textContent = (axisMode === "invA") ? `±${fmt(kEdge_invA,3)} Å⁻¹` : `±π`;
+
+    // --- Band plot ---
+    const bandTraces = [];
+    for (let b=0; b<bands.length; b++){
+      bandTraces.push({
+        x: xBand,
+        y: bands[b],
+        type: "scatter",
+        mode: "lines",
+        name: (bands.length === 1) ? "E(k)" : (b===0 ? "Lower band" : "Upper band")
+      });
+    }
+
+    // optional discrete k points (monoatomic only, as a “finite chain” intuition)
+    if (model.value === "mono" && showDiscrete.checked){
+      const N = parseInt(Nk.value, 10);
+      const kd = [];
       for (let n=0; n<N; n++){
         let k = (2*Math.PI/(N*aAng)) * n; // Å^-1
-        if (k >= kEdge_invA) k -= 2*kEdge_invA; // shift to [-π/a, π/a)
+        if (k >= kEdge_invA) k -= 2*kEdge_invA; // map to [-pi/a, pi/a)
         kd.push(k);
       }
       kd.sort((x,y)=>x-y);
-      Ed = kd.map(k => energy(k, E0eV, t1eV, t2eV, aAng));
-    }
-    const xd = (axisMode === "ka") ? kd.map(k => k * aAng) : kd;
+      const qd = kd.map(k => k*aAng);
+      const E0 = parseFloat(E0m.value);
+      const t1 = parseFloat(t1m.value);
+      const t2 = parseFloat(t2m.value);
+      const Ed = qd.map(q => E0 + 2*t1*Math.cos(q) + 2*t2*Math.cos(2*q));
+      const xd = (axisMode === "ka") ? qd : kd;
 
-    const traces = [
-      {
-        x: x_arr,
-        y: E_arr,
-        type: "scatter",
-        mode: "lines",
-        name: "E(k)"
-      }
-    ];
-
-    if (showDisc){
-      traces.push({
+      bandTraces.push({
         x: xd,
         y: Ed,
         type: "scatter",
@@ -371,51 +614,139 @@
       });
     }
 
-    const xlabel = (axisMode === "ka") ? "Reduced wavevector, ka" : "Wavevector, k (Å⁻¹)";
-    const layout = {
-      margin: {l: 60, r: 20, t: 20, b: 55},
-      paper_bgcolor: "rgba(0,0,0,0)",
-      plot_bgcolor: "rgba(0,0,0,0)",
-      xaxis: {
-        title: xlabel,
-        zeroline: false,
-        gridcolor: "rgba(255,255,255,0.08)",
-        tickfont: {color: "rgba(232,238,252,0.9)"},
-        titlefont: {color: "rgba(232,238,252,0.95)"}
-      },
-      yaxis: {
-        title: "Energy E (eV)",
-        zeroline: false,
-        gridcolor: "rgba(255,255,255,0.08)",
-        tickfont: {color: "rgba(232,238,252,0.9)"},
-        titlefont: {color: "rgba(232,238,252,0.95)"}
-      },
-      legend: {
-        bgcolor: "rgba(0,0,0,0)",
-        font: {color: "rgba(232,238,252,0.9)"}
-      }
-    };
+    Plotly.react("plotBand", bandTraces, {
+      ...layoutCommon(),
+      xaxis: axisStyle(xlabel),
+      yaxis: axisStyle("Energy E (eV)")
+    }, {responsive:true, displayModeBar:true});
 
-    Plotly.react("plot", traces, layout, {responsive:true, displayModeBar:true});
+    // --- Derived plots (velocity and effective mass) ---
+    const derived = computeVelocityAndMass(qArr, bands, aAng);
+
+    const velTraces = [];
+    const massTraces = [];
+    for (let b=0; b<bands.length; b++){
+      velTraces.push({
+        x: xBand,
+        y: derived[b].v,
+        type: "scatter",
+        mode: "lines",
+        name: (bands.length === 1) ? "v(k)" : (b===0 ? "v(k) lower" : "v(k) upper")
+      });
+
+      // Clip/clean huge values for display (near inflection points curvature -> 0)
+      const mArr = derived[b].mstar.map(val => {
+        if (!isFinite(val)) return NaN;
+        if (Math.abs(val) > 200) return NaN;
+        return val;
+      });
+
+      massTraces.push({
+        x: xBand,
+        y: mArr,
+        type: "scatter",
+        mode: "lines",
+        name: (bands.length === 1) ? "m*(k)/me" : (b===0 ? "m*(k) lower" : "m*(k) upper")
+      });
+    }
+
+    Plotly.react("plotVel", velTraces, {
+      ...layoutCommon(),
+      margin: {l: 62, r: 20, t: 12, b: 52},
+      xaxis: axisStyle(xlabel),
+      yaxis: axisStyle("Group velocity v(k) (m/s)")
+    }, {responsive:true, displayModeBar:false});
+
+    Plotly.react("plotMass", massTraces, {
+      ...layoutCommon(),
+      margin: {l: 62, r: 20, t: 12, b: 52},
+      xaxis: axisStyle(xlabel),
+      yaxis: axisStyle("Effective mass m*(k) / me")
+    }, {responsive:true, displayModeBar:false});
+
+    // --- DOS plot ---
+    // choose DOS window slightly beyond band extrema for nicer tails
+    const pad = 0.08 * Math.max(1e-6, stats.BW);
+    const Emin = stats.Emin - pad;
+    const Emax = stats.Emax + pad;
+    const sigma_eV = parseFloat(dosSigma.value) / 1000.0;
+
+    const {Egrid, dos} = computeDOS(bands, Emin, Emax, sigma_eV);
+
+    const dosTraces = [{
+      x: dos,
+      y: Egrid,
+      type: "scatter",
+      mode: "lines",
+      name: "DOS"
+    }];
+
+    // annotate gap edges for diatomic
+    if (bands.length >= 2){
+      const lower = bands[0], upper = bands[1];
+      let maxLower = -Infinity, minUpper = Infinity;
+      for (const E of lower) if (E > maxLower) maxLower = E;
+      for (const E of upper) if (E < minUpper) minUpper = E;
+
+      dosTraces.push({
+        x: [0, Math.max(...dos)],
+        y: [maxLower, maxLower],
+        type: "scatter",
+        mode: "lines",
+        name: "Top of lower band",
+        line: { dash: "dot" }
+      });
+      dosTraces.push({
+        x: [0, Math.max(...dos)],
+        y: [minUpper, minUpper],
+        type: "scatter",
+        mode: "lines",
+        name: "Bottom of upper band",
+        line: { dash: "dot" }
+      });
+    }
+
+    Plotly.react("plotDOS", dosTraces, {
+      ...layoutCommon(),
+      xaxis: axisStyle("DOS (arb. units; area normalized to # bands)"),
+      yaxis: axisStyle("Energy E (eV)")
+    }, {responsive:true, displayModeBar:true});
+
+    // Ensure currently active tab stays visible (plots need reflow)
+    const active = document.querySelector(".tab.active")?.dataset.tab || "band";
+    setActiveTab(active);
+    Plotly.Plots.resize("plotBand");
+    Plotly.Plots.resize("plotDOS");
+    Plotly.Plots.resize("plotVel");
+    Plotly.Plots.resize("plotMass");
   }
 
-  // Events
-  [E0, t1, t2, a, Nk].forEach(inp => inp.addEventListener("input", rebuildPlot));
-  showDiscrete.addEventListener("change", rebuildPlot);
-  document.querySelectorAll('input[name="kaxis"]').forEach(r => r.addEventListener("change", rebuildPlot));
-
-  preset1.addEventListener("click", () => {
-    E0.value = "0.00"; t1.value = "-1.00"; t2.value = "0.00"; a.value = "4.00"; Nk.value = "20";
-    showDiscrete.checked = true;
-    rebuildPlot();
+  // Tab logic
+  tabEls.forEach(t => {
+    t.addEventListener("click", () => {
+      setActiveTab(t.dataset.tab);
+      // Plotly sometimes needs a nudge after display changes
+      setTimeout(() => {
+        Plotly.Plots.resize("plotBand");
+        Plotly.Plots.resize("plotDOS");
+        Plotly.Plots.resize("plotVel");
+        Plotly.Plots.resize("plotMass");
+      }, 50);
+    });
   });
-  preset2.addEventListener("click", () => {
-    t1.value = "-0.20";
-    rebuildPlot();
-  });
 
-  // First render
-  rebuildPlot();
+  // Event wiring
+  [
+    model, a,
+    E0m, t1m, t2m, Nk, showDiscrete,
+    E0d, Delta, t1d, t2d, lockDimer,
+    dosSigma
+  ].forEach(ctrl => ctrl.addEventListener("input", rebuildAll));
+  document.querySelectorAll('input[name="kaxis"]').forEach(r => r.addEventListener("change", rebuildAll));
+
+  // Initial state
+  setActiveTab("band");
+  rebuildAll();
 })();
 </script>
 </body>
