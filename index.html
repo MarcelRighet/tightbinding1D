@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>1D Tight-Binding Band Visualizer</title>
+
+  <!-- Plotly (CDN) -->
+  <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#0b0f17;
+      --card:#121a28;
+      --text:#e8eefc;
+      --muted:#a9b4cf;
+      --accent:#7aa2ff;
+      --border:rgba(255,255,255,.10);
+    }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background:linear-gradient(180deg,#0b0f17 0%, #070a10 100%);
+      color:var(--text);
+    }
+    .wrap{
+      max-width:1100px;
+      margin:0 auto;
+      padding:18px;
+      display:grid;
+      grid-template-columns: 360px 1fr;
+      gap:16px;
+    }
+    @media (max-width: 980px){
+      .wrap{ grid-template-columns: 1fr; }
+    }
+    .card{
+      background:rgba(18,26,40,.92);
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:14px;
+      box-shadow: 0 14px 40px rgba(0,0,0,.25);
+    }
+    h1{
+      font-size:18px;
+      margin:0 0 10px 0;
+      letter-spacing:.2px;
+      font-weight:650;
+    }
+    .sub{
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.35;
+      margin:0 0 12px 0;
+    }
+    .control{
+      margin:12px 0;
+      padding:10px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:rgba(255,255,255,.03);
+    }
+    .control label{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      font-size:13px;
+      color:var(--text);
+      margin-bottom:8px;
+    }
+    .control label span{
+      color:var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+    input[type="range"]{
+      width:100%;
+    }
+    .row{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+    .row label{
+      font-size:13px;
+      color:var(--muted);
+      display:flex;
+      align-items:center;
+      gap:8px;
+      user-select:none;
+    }
+    .pill{
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+      padding:8px 10px;
+      border:1px solid var(--border);
+      border-radius:999px;
+      background:rgba(255,255,255,.03);
+      font-size:12.5px;
+      color:var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .pill b{ color: var(--text); font-weight:650; }
+    .footer{
+      margin-top:10px;
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.35;
+    }
+    .btnrow{
+      display:flex;
+      gap:10px;
+      margin-top:10px;
+      flex-wrap:wrap;
+    }
+    button{
+      appearance:none;
+      border:1px solid var(--border);
+      background:rgba(255,255,255,.04);
+      color:var(--text);
+      padding:9px 11px;
+      border-radius:12px;
+      font-size:13px;
+      cursor:pointer;
+    }
+    button:hover{ border-color: rgba(122,162,255,.55); }
+    .plotcard{ padding:10px; }
+    #plot{ width:100%; height:560px; }
+    @media (max-width: 980px){
+      #plot{ height:520px; }
+    }
+    .radio{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      margin-top:8px;
+    }
+    .radio label{
+      font-size:13px;
+      color:var(--muted);
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+    code{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      color: #d7e3ff;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>1D Tight-Binding Band Visualizer</h1>
+      <p class="sub">
+        Model: <code>E(k)=E₀+2t cos(ka)+2t₂ cos(2ka)</code> over the 1st Brillouin zone.
+        Tune parameters to see how the band, BZ width, bandwidth, and effective mass change.
+      </p>
+
+      <div class="control">
+        <label for="E0"><div>Onsite energy <b>E₀</b> (eV)</div><span id="E0v"></span></label>
+        <input id="E0" type="range" min="-5" max="5" step="0.01" value="0">
+      </div>
+
+      <div class="control">
+        <label for="t1"><div>Nearest-neighbor hopping <b>t</b> (eV)</div><span id="t1v"></span></label>
+        <input id="t1" type="range" min="-5" max="5" step="0.01" value="-1.00">
+      </div>
+
+      <div class="control">
+        <label for="t2"><div>Next-nearest hopping <b>t₂</b> (eV) <span style="color:var(--muted)">(optional)</span></div><span id="t2v"></span></label>
+        <input id="t2" type="range" min="-2" max="2" step="0.01" value="0.00">
+      </div>
+
+      <div class="control">
+        <label for="a"><div>Lattice constant <b>a</b> (Å)</div><span id="av"></span></label>
+        <input id="a" type="range" min="1" max="10" step="0.01" value="4.00">
+      </div>
+
+      <div class="control">
+        <label for="Nk"><div>Finite chain k-points <b>N</b> (periodic)</div><span id="Nkv"></span></label>
+        <input id="Nk" type="range" min="2" max="200" step="1" value="20">
+        <div class="row">
+          <label><input id="showDiscrete" type="checkbox" checked> show discrete k-points</label>
+        </div>
+      </div>
+
+      <div class="control">
+        <div style="font-size:13px; color:var(--text); margin-bottom:6px;">k-axis</div>
+        <div class="radio">
+          <label><input type="radio" name="kaxis" value="invA" checked> <span>k in Å⁻¹</span></label>
+          <label><input type="radio" name="kaxis" value="ka"> <span>reduced coordinate <code>ka</code></span></label>
+        </div>
+      </div>
+
+      <div class="btnrow">
+        <button id="preset1">Preset: typical (t = −1 eV, a = 4 Å)</button>
+        <button id="preset2">Preset: weak coupling (t = −0.2 eV)</button>
+      </div>
+
+      <div class="row" style="margin-top:12px;">
+        <div class="pill"><b>Bandwidth</b> <span id="bw"></span></div>
+        <div class="pill"><b>BZ edge</b> <span id="bzed"></span></div>
+        <div class="pill"><b>m*/me</b> <span id="mstar"></span></div>
+      </div>
+
+      <div class="footer">
+        Notes: In tight binding, the sign of <code>t</code> sets whether the minimum is at <code>k=0</code> (often <code>t&lt;0</code>) or at the zone edge.
+        Changing <code>a</code> rescales the Brillouin zone width in Å⁻¹.
+      </div>
+    </div>
+
+    <div class="card plotcard">
+      <div id="plot"></div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  // Physical constants (SI) for effective mass estimate
+  const eV_to_J = 1.602176634e-19;
+  const hbar = 1.054571817e-34; // J*s
+  const m_e = 9.1093837015e-31; // kg
+  const Ang_to_m = 1e-10;
+
+  // UI handles
+  const el = (id) => document.getElementById(id);
+  const E0 = el("E0"), t1 = el("t1"), t2 = el("t2"), a = el("a"), Nk = el("Nk");
+  const E0v = el("E0v"), t1v = el("t1v"), t2v = el("t2v"), av = el("av"), Nkv = el("Nkv");
+  const showDiscrete = el("showDiscrete");
+  const bw = el("bw"), bzed = el("bzed"), mstar = el("mstar");
+  const preset1 = el("preset1"), preset2 = el("preset2");
+
+  function fmt(x, digits=2){ return Number(x).toFixed(digits); }
+
+  function getAxisMode(){
+    const radios = document.querySelectorAll('input[name="kaxis"]');
+    for (const r of radios) if (r.checked) return r.value;
+    return "invA";
+  }
+
+  function linspace(start, stop, n){
+    const arr = new Array(n);
+    const step = (stop - start) / (n - 1);
+    for (let i=0; i<n; i++) arr[i] = start + step*i;
+    return arr;
+  }
+
+  function energy(k, E0eV, t1eV, t2eV, aAng){
+    // k is in Å^-1
+    const ka = k * aAng; // dimensionless
+    return E0eV + 2*t1eV*Math.cos(ka) + 2*t2eV*Math.cos(2*ka);
+  }
+
+  function d2E_dk2_at_k(k, t1eV, t2eV, aAng){
+    // second derivative w.r.t k (in 1/m) requires using a in meters if k in 1/m.
+    // We compute curvature using k in 1/m internally.
+    // For E = 2 t cos(k a): d2E/dk2 = -2 t a^2 cos(k a)
+    // For E = 2 t2 cos(2 k a): d2E/dk2 = -8 t2 a^2 cos(2 k a)
+    const a_m = aAng * Ang_to_m;
+    const ka = k * a_m; // dimensionless (k in 1/m)
+    // Curvature in eV * m^2 (since a_m^2)
+    const curv_eV_m2 =
+      (-2 * t1eV * a_m*a_m * Math.cos(ka)) +
+      (-8 * t2eV * a_m*a_m * Math.cos(2*ka));
+    return curv_eV_m2 * eV_to_J; // J * m^2
+  }
+
+  function estimateEffectiveMass(E0eV, t1eV, t2eV, aAng){
+    // Find band minimum by sampling within BZ, then compute curvature there.
+    // Use k in 1/m for curvature calculation.
+    const a_m = aAng * Ang_to_m;
+    const kmax = Math.PI / a_m;
+    const n = 2001;
+    let kmin = -kmax, Emin = Infinity;
+
+    for (let i=0; i<n; i++){
+      const k = -kmax + (2*kmax)*(i/(n-1)); // 1/m
+      const ka = k * a_m;
+      const E = E0eV + 2*t1eV*Math.cos(ka) + 2*t2eV*Math.cos(2*ka);
+      if (E < Emin){
+        Emin = E; kmin = k;
+      }
+    }
+
+    const curv = d2E_dk2_at_k(kmin, t1eV, t2eV, aAng); // J*m^2
+    if (!isFinite(curv) || Math.abs(curv) < 1e-60) return NaN;
+
+    // m* = ħ^2 / (d^2E/dk^2)
+    const mstar_kg = (hbar*hbar) / curv;
+    return mstar_kg / m_e;
+  }
+
+  function updateLabels(){
+    E0v.textContent = `${fmt(E0.value,2)} eV`;
+    t1v.textContent = `${fmt(t1.value,2)} eV`;
+    t2v.textContent = `${fmt(t2.value,2)} eV`;
+    av.textContent  = `${fmt(a.value,2)} Å`;
+    Nkv.textContent = `${Nk.value}`;
+  }
+
+  function rebuildPlot(){
+    updateLabels();
+
+    const E0eV = parseFloat(E0.value);
+    const t1eV = parseFloat(t1.value);
+    const t2eV = parseFloat(t2.value);
+    const aAng = parseFloat(a.value);
+
+    // Continuous curve in Å^-1 for display
+    const kEdge_invA = Math.PI / aAng;          // (π/a) in Å^-1
+    const k_arr = linspace(-kEdge_invA, kEdge_invA, 1201);
+    const E_arr = k_arr.map(k => energy(k, E0eV, t1eV, t2eV, aAng));
+
+    // Summary stats
+    let Emin = Infinity, Emax = -Infinity;
+    for (const E of E_arr){ if (E < Emin) Emin = E; if (E > Emax) Emax = E; }
+    const BW = Emax - Emin;
+
+    bw.textContent = `${fmt(BW,3)} eV`;
+    bzed.textContent = (getAxisMode()==="invA")
+      ? `±${fmt(kEdge_invA,3)} Å⁻¹`
+      : `±π`;
+
+    const mrel = estimateEffectiveMass(E0eV, t1eV, t2eV, aAng);
+    mstar.textContent = isFinite(mrel) ? `${fmt(mrel,3)}` : "—";
+
+    // x-axis mapping
+    const axisMode = getAxisMode();
+    const x_arr = (axisMode === "ka") ? k_arr.map(k => k * aAng) : k_arr;
+
+    // Optional discrete k-points for periodic chain
+    const N = parseInt(Nk.value, 10);
+    const showDisc = showDiscrete.checked;
+    let kd = [], Ed = [];
+    if (showDisc){
+      // k_n = (2π/(Na)) n mapped to [-π/a, π/a)
+      // Build symmetric set around 0 for clarity.
+      for (let n=0; n<N; n++){
+        let k = (2*Math.PI/(N*aAng)) * n; // Å^-1
+        if (k >= kEdge_invA) k -= 2*kEdge_invA; // shift to [-π/a, π/a)
+        kd.push(k);
+      }
+      kd.sort((x,y)=>x-y);
+      Ed = kd.map(k => energy(k, E0eV, t1eV, t2eV, aAng));
+    }
+    const xd = (axisMode === "ka") ? kd.map(k => k * aAng) : kd;
+
+    const traces = [
+      {
+        x: x_arr,
+        y: E_arr,
+        type: "scatter",
+        mode: "lines",
+        name: "E(k)"
+      }
+    ];
+
+    if (showDisc){
+      traces.push({
+        x: xd,
+        y: Ed,
+        type: "scatter",
+        mode: "markers",
+        name: `Discrete k (N=${N})`,
+        marker: { size: 7, symbol: "circle" }
+      });
+    }
+
+    const xlabel = (axisMode === "ka") ? "Reduced wavevector, ka" : "Wavevector, k (Å⁻¹)";
+    const layout = {
+      margin: {l: 60, r: 20, t: 20, b: 55},
+      paper_bgcolor: "rgba(0,0,0,0)",
+      plot_bgcolor: "rgba(0,0,0,0)",
+      xaxis: {
+        title: xlabel,
+        zeroline: false,
+        gridcolor: "rgba(255,255,255,0.08)",
+        tickfont: {color: "rgba(232,238,252,0.9)"},
+        titlefont: {color: "rgba(232,238,252,0.95)"}
+      },
+      yaxis: {
+        title: "Energy E (eV)",
+        zeroline: false,
+        gridcolor: "rgba(255,255,255,0.08)",
+        tickfont: {color: "rgba(232,238,252,0.9)"},
+        titlefont: {color: "rgba(232,238,252,0.95)"}
+      },
+      legend: {
+        bgcolor: "rgba(0,0,0,0)",
+        font: {color: "rgba(232,238,252,0.9)"}
+      }
+    };
+
+    Plotly.react("plot", traces, layout, {responsive:true, displayModeBar:true});
+  }
+
+  // Events
+  [E0, t1, t2, a, Nk].forEach(inp => inp.addEventListener("input", rebuildPlot));
+  showDiscrete.addEventListener("change", rebuildPlot);
+  document.querySelectorAll('input[name="kaxis"]').forEach(r => r.addEventListener("change", rebuildPlot));
+
+  preset1.addEventListener("click", () => {
+    E0.value = "0.00"; t1.value = "-1.00"; t2.value = "0.00"; a.value = "4.00"; Nk.value = "20";
+    showDiscrete.checked = true;
+    rebuildPlot();
+  });
+  preset2.addEventListener("click", () => {
+    t1.value = "-0.20";
+    rebuildPlot();
+  });
+
+  // First render
+  rebuildPlot();
+})();
+</script>
+</body>
+</html>
